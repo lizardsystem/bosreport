@@ -75,8 +75,30 @@ class SwdesEquidistant(object):
         fo.close()
 
     def __str__(self):
-        return 'We have Qs of locations %s with dates from %r to %r' % (
+        return 'We have Q values of locations %s with dates from %r to %r' % (
             ', '.join(self.data.keys()), self.start_date, self.end_date)
+
+
+class SumByDay(object):
+    def __init__(self, input_data, start_date, end_date):
+        """Input data: {date1: value1, date2: value2, etc}"""
+        self.data = {}
+        self.sum_all = 0.
+        for input_date, input_value in input_data.items():
+            current_date = datetime.datetime(
+                input_date.year, input_date.month, input_date.day)
+            if current_date >= start_date and current_date < end_date:
+                if not self.data.has_key(current_date):
+                    self.data[current_date] = 0.0
+                self.data[current_date] += input_value
+                self.sum_all += input_value
+
+    # def as_csv(self, start_date, end_date):
+    #     step = datetime.timedelta(days=1)
+    #     current_dt = start_date
+    #     while current_dt < end_date:
+    #         current_dt += step
+            
 
 
 if __name__ == '__main__':
@@ -102,4 +124,38 @@ if __name__ == '__main__':
     for ldb_filename1 in ldb_files:
         se.import_ldb_file(join(args.input_dir, ldb_filename1))
 
-    print se
+    # print se
+
+    # Generate output
+
+    # Only the ones listed are in the output
+    """ GEMAAL PARKSLUIZEN					GEMAAL SCHIEGEMAAL					GEMAAL VLAARDINGERDRIESLUIZEN					GEMAAL ZAAYER					WATERINGSE SLUIS		GEMAAL WESTLAND					VD BURG		SCHEVENINGEN		TOTAAL GELOOSD			GEMAAL DOLK		WINSEMIUS		TOTAAL	VERSCHIL"""
+
+    structures = {
+        'KW01': 'kw01',
+        'KW02': 'kw02',
+        'KW03': 'kw03',
+        'KW04': 'kw04',
+        }
+
+    start_month = se.start_date.month
+    end_month = se.end_date.month
+    current_month = start_month
+    current_month_dt = datetime.datetime(
+        se.start_date.year, current_month, 1)
+
+    # TODO: correctly adding months
+    while current_month_dt <= se.end_date:
+        current_month_end_dt = datetime.datetime(
+            se.start_date.year,
+            current_month+1,
+            1)
+        for structure_id, structure_name in structures.items():
+            print '%s %r' % (structure_name, current_month_dt)
+            kw = SumByDay(se.data[structure_id], 
+                          current_month_dt, current_month_end_dt)
+            print kw.sum_all
+        
+        current_month += 1
+        current_month_dt = datetime.datetime(
+            se.start_date.year, current_month, 1)
