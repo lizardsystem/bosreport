@@ -3,6 +3,8 @@ Create monthly structure reports based on SWDES
 Equidistant (LDB) files.
 """
 import datetime
+import os
+import csv
 from os import listdir
 from os.path import isfile, join
 
@@ -40,7 +42,7 @@ class SwdesEquidistant(object):
     def __init__(self):
         """
         """
-        self.data = {}  # keys are locations, contents are Qs
+        self.data = {}  # keys are locations, contents are dicts with dt/Qs
         self.start_date = None
         self.end_date = None
 
@@ -98,7 +100,19 @@ class SumByDay(object):
     #     current_dt = start_date
     #     while current_dt < end_date:
     #         current_dt += step
-            
+
+
+def next_month(dt):
+    """
+    Calculate first of next month
+    """
+    year, month = dt.year, dt.month
+    if month == 12:
+        month = 1
+        year += 1
+    else:
+        month += 1
+    return datetime.datetime(year, month, 1)
 
 
 if __name__ == '__main__':
@@ -128,34 +142,64 @@ if __name__ == '__main__':
 
     # Generate output
 
-    # Only the ones listed are in the output
+    # Only the ones listed in structures are in the output
     """ GEMAAL PARKSLUIZEN					GEMAAL SCHIEGEMAAL					GEMAAL VLAARDINGERDRIESLUIZEN					GEMAAL ZAAYER					WATERINGSE SLUIS		GEMAAL WESTLAND					VD BURG		SCHEVENINGEN		TOTAAL GELOOSD			GEMAAL DOLK		WINSEMIUS		TOTAAL	VERSCHIL"""
 
     structures = {
-        'KW01': 'kw01',
-        'KW02': 'kw02',
-        'KW03': 'kw03',
-        'KW04': 'kw04',
+        'KW01': 1,
+        'KW02': 2,
+        'KW03': 3,
+        'KW04': 4,
+        'KW05': 5,
+        'KW06': 6,
+        'KW07': 7,
+        'KW08': 8,
+        'KW09': 9,
+        #'KW10': 'kw10',
+        'KW11': 10,
+        #'KW12': 'kw12',
+        #'KW13': 'kw13',
+        #'KW14': 'kw14',
         }
 
-    start_month = se.start_date.month
-    end_month = se.end_date.month
-    current_month = start_month
-    current_month_dt = datetime.datetime(
-        se.start_date.year, current_month, 1)
+    start_dt = se.start_date
+    end_dt = se.end_date
+    current_dt = datetime.datetime(start_dt.year, start_dt.month, 1)
 
-    # TODO: correctly adding months
-    while current_month_dt <= se.end_date:
-        current_month_end_dt = datetime.datetime(
-            se.start_date.year,
-            current_month+1,
-            1)
-        for structure_id, structure_name in structures.items():
-            print '%s %r' % (structure_name, current_month_dt)
-            kw = SumByDay(se.data[structure_id], 
-                          current_month_dt, current_month_end_dt)
-            print kw.sum_all
-        
-        current_month += 1
-        current_month_dt = datetime.datetime(
-            se.start_date.year, current_month, 1)
+    while current_dt <= end_dt:
+        #result is per month
+        result = {}  # date as key, then dict with col numbers and value
+        current_end_dt = next_month(current_dt)
+        for structure_id, structure_colnum in structures.items():
+            print '%d %r' % (structure_colnum, current_dt)
+            dt_counter = current_dt
+            while dt_counter < current_end_dt:
+                if dt_counter not in result:
+                    result[dt_counter] = {0: dt_counter.strftime('%m/%d/%Y %H:%M:%S')}
+                result[dt_counter][structure_colnum] = se.data[structure_id].get(dt_counter, 0.)
+                dt_counter += datetime.timedelta(minutes=15)
+            # kw = SumByDay(se.data[structure_id], 
+            #               current_dt, current_end_dt)
+            # print kw.sum_all
+        result_sorted = result.items()
+        result_sorted.sort(key=lambda a: a[0])
+        output_filename = os.path.join(
+            'output', 
+            'output_%04d%02d.csv' % (current_dt.year, current_dt.month))
+        # fo = open(output_filename, "w")
+        # for dt, values in result_sorted:
+        #     values_sorted = values.items()
+        #     sorted(values)
+        #     values_to_file = [v[1] for v in values_sorted]
+        #     fo.write(', '.join(values_to_file))
+        # fo.close()
+
+        with open(output_filename, 'w') as csvfile:
+            spamwriter = csv.writer(csvfile, delimiter=',',
+                                    quotechar='\'', quoting=csv.QUOTE_MINIMAL)
+            for dt, values in result_sorted:
+                values_sorted = values.items()
+                values_sorted.sort(key=lambda a: a[0])
+                spamwriter.writerow([v[1] for v in values_sorted])
+
+        current_dt = next_month(current_dt)

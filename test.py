@@ -1,6 +1,7 @@
 """testing bosreport"""
 from bosreport import SwdesPart
 from bosreport import SwdesEquidistant
+from bosreport import next_month
 import unittest
 import datetime
 
@@ -31,6 +32,26 @@ class TestSwdesPart(unittest.TestCase):
             self.s.location, 'TG')
         self.assertEquals(
             self.s.parameter, 'GN')
+
+
+class TestNextMonth(unittest.TestCase):
+    def test_one(self):
+        dt = datetime.datetime(2012, 12, 27, 13, 46, 0) 
+        self.assertEquals(
+            next_month(dt), 
+            datetime.datetime(2013, 1, 1))
+
+    def test_two(self):
+        dt = datetime.datetime(2013, 1, 24) 
+        self.assertEquals(
+            next_month(dt), 
+            datetime.datetime(2013, 2, 1))
+
+    def test_three(self):
+        dt = datetime.datetime(2013, 2, 1) 
+        self.assertEquals(
+            next_month(dt), 
+            datetime.datetime(2013, 3, 1))
 
 
 if __name__ == '__main__':
