@@ -1,7 +1,17 @@
 bosreport
 =========
 
-Create (monthly) structure reports based on SWDES Equidistant (LDB) files.
+Create (monthly) structure reports based on SWDES Equidistant (LDB)
+files. Python 2.7 is required to run this program.
+
+
+Installation
+------------
+
+- Install Python 2.7
+
+- Put bosreport somewhere
+
 
 Usage
 -----
