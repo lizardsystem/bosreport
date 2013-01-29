@@ -121,22 +121,27 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description=('Create monthly structure reports based on '
                      'SWDES Equidistant (LDB) files.'))
-    parser.add_argument('input_dir', metavar='input_dir', type=str, 
+    parser.add_argument('--input_dir', metavar='input_dir', type=str, 
                         help='Input directory with ldb files')
     args = parser.parse_args()
-    print 'input dir: %s' % args.input_dir
+    if args.input_dir:
+        input_dir = args.input_dir
+    else:
+        # Default
+        input_dir = 'input'
+    print 'input dir: %s' % input_dir
 
     se = SwdesEquidistant()
 
     # Read all ldb files
     ldb_files = [f for f in 
-                 listdir(args.input_dir) if 
-                 isfile(join(args.input_dir, f)) and 
+                 listdir(input_dir) if 
+                 isfile(join(input_dir, f)) and 
                  f.endswith('.ldb')]
     print 'files: %s' % (', '.join(ldb_files))
 
     for ldb_filename1 in ldb_files:
-        se.import_ldb_file(join(args.input_dir, ldb_filename1))
+        se.import_ldb_file(join(input_dir, ldb_filename1))
 
     # print se
 
@@ -162,6 +167,10 @@ if __name__ == '__main__':
         #'KW14': 'kw14',
         }
 
+    if se.start_date is None or se.end_date is None:
+        print 'No data found, quitting.'
+        quit()
+
     start_dt = se.start_date
     end_dt = se.end_date
     current_dt = datetime.datetime(start_dt.year, start_dt.month, 1)
@@ -171,7 +180,9 @@ if __name__ == '__main__':
         result = {}  # date as key, then dict with col numbers and value
         current_end_dt = next_month(current_dt)
         for structure_id, structure_colnum in structures.items():
-            print '%d %r' % (structure_colnum, current_dt)
+            print 'Processing column %d with month %04d-%02d...' % (
+                structure_colnum, 
+                current_dt.year, current_dt.month)
             dt_counter = current_dt
             while dt_counter < current_end_dt:
                 if dt_counter not in result:
@@ -203,3 +214,5 @@ if __name__ == '__main__':
                 spamwriter.writerow([v[1] for v in values_sorted])
 
         current_dt = next_month(current_dt)
+
+    print 'Finished. The output can be found in folder output.'
